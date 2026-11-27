@@ -80,7 +80,7 @@ function Home() {
       <section className="lobby-main">
         <div className="toolbar">
           <div>
-            <h2>工作室</h2>
+            <h2>项目</h2>
             <p className="muted">项目、图片和导出文件都留在你的机器上。</p>
           </div>
           <div className="actions">
@@ -205,7 +205,7 @@ function Settings() {
         <a className="brand-lockup" href="#/"><Mark /> Oriel NFT</a>
         <h1>你的接口，你的额度。</h1>
         <p className="lede">填写 OpenAI 兼容的 Base URL 和密钥。分析、规划和出图可以各选一个模型。</p>
-        <p className="brand-note">使用远程接口时，参考图或主图会发给该服务。调用前工作室会再提醒一次。</p>
+        <p className="brand-note">使用远程接口时，参考图或主图会发给该服务。调用前项目会再提醒一次。</p>
       </section>
       <section className="lobby-main">
         <div className="toolbar">

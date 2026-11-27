@@ -1,10 +1,10 @@
 <h1 align="center">Oriel NFT</h1>
-<p align="center">AI 藏品创作工作室。从一张参考图出发，挑选艺术方向，锁定主图，再合成风格一致的 NFT 系列。</p>
+<p align="center">面向非设计师的 AI 藏品创作项目。从一张参考图出发，挑选艺术方向，锁定主图，再生成风格一致的 NFT 系列。</p>
 <p align="center">
   <img alt="Python" src="https://img.shields.io/badge/Python-3.14-315f98?style=flat-square">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-f97316?style=flat-square">
 </p>
-<p align="center"><a href="#quick-start">快速开始</a> · <a href="#workflow">使用流程</a> · <a href="#providers">接口</a> · <a href="#docker">Docker</a></p>
+<p align="center"><a href="#quick-start">快速开始</a> · <a href="#workflow">使用流程</a> · <a href="#providers">接口</a> · <a href="#docker">Docker</a> · <a href="README.en.md">English</a></p>
 
 Oriel NFT 不提供模型、账号或额度。自行部署时，项目和图片默认留在你自己的机器上，开发者不转发 API 请求，也不承担调用费用。
 
@@ -24,7 +24,7 @@ python -m server
 
 打开 `http://127.0.0.1:8787`。没有接口时，可以先打开「离线样例」走通属性、合成、稀有度和导出。样例图层是程序绘制的，不是模型生成的。
 
-在线页面计划部署于 `https://orielnft.dmechai.com`。部署前必须通过反向代理启用身份验证；应用不是面向匿名公网的多用户服务。
+在线自用实例部署于 `https://oriel.dmechai.com`，并由反向代理身份验证保护；应用本身不是面向匿名公网的多用户服务。
 
 开发界面热更新：
 

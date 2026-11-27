@@ -85,7 +85,7 @@ export default function Studio({ id }) {
     reload().catch((err) => setError(err.message));
   }, [id]);
 
-  if (!project || !meta) return <main className="studio"><p style={{ padding: 24 }}>{error || "正在打开工作室…"}</p></main>;
+  if (!project || !meta) return <main className="studio"><p style={{ padding: 24 }}>{error || "正在打开项目…"}</p></main>;
 
   const provider = providers.find((item) => item.id === project.provider_id) || providers.find((item) => item.is_default) || providers[0];
   const reference = project.files.find((file) => file.kind === "reference");
@@ -223,7 +223,7 @@ export default function Studio({ id }) {
 
           {stage === "reference" && (
             <>
-              <p className="muted">什么图都可以先分析。多人或含义不清时，只需要回答工作室提出的那一个问题。</p>
+              <p className="muted">什么图都可以先分析。多人或含义不清时，只需要回答项目提出的那一个问题。</p>
               <div className="hero checker">{reference ? <img src={reference.url} alt="参考图" /> : <div style={{ padding: 48 }}>还没有参考图</div>}</div>
               <div className="row" style={{ marginTop: 12 }}>
                 <button className="btn-ghost" disabled={!!master || job?.status === "running"} type="button" onClick={() => document.getElementById("reference-upload").click()}>上传参考图</button>
