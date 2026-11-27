@@ -1,0 +1,7 @@
+data
+.venv
+**/__pycache__
+.pytest_cache
+web/node_modules
+.git
+*.sqlite

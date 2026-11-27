@@ -1,0 +1,14 @@
+services:
+  oriel:
+    build: .
+    ports:
+      - "127.0.0.1:8787:8787"
+    environment:
+      ORIEL_DATA: /data
+      ORIEL_HOST: 0.0.0.0
+      ORIEL_PORT: 8787
+    volumes:
+      - oriel-data:/data
+
+volumes:
+  oriel-data:
