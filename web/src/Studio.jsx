@@ -3,12 +3,12 @@ import { api, waitJob } from "./api";
 import { Mark } from "./mark.jsx";
 
 const STAGES = [
-  ["reference", "参考"],
-  ["direction", "方向"],
-  ["master", "主图"],
-  ["traits", "属性"],
-  ["assets", "素材"],
-  ["collection", "系列"],
+  ["reference", "参考图"],
+  ["direction", "方向探索"],
+  ["master", "主图与风格合同"],
+  ["traits", "属性规划与规则"],
+  ["assets", "素材审核"],
+  ["collection", "样张、系列与导出"],
 ];
 
 const EMPTY_ANALYSIS = {
@@ -36,6 +36,7 @@ export default function Studio({ id }) {
   const [meta, setMeta] = useState(null);
   const [providers, setProviders] = useState([]);
   const [stage, setStage] = useState("reference");
+  const [separation, setSeparation] = useState("local");
   const [error, setError] = useState("");
   const [job, setJob] = useState(null);
   const [analysis, setAnalysis] = useState(EMPTY_ANALYSIS);
@@ -190,29 +191,49 @@ export default function Studio({ id }) {
   }
 
   const weakReference = concepts.some((file) => file.meta?.reference_sent === false);
+  const stageIndex = STAGES.findIndex(([key]) => key === stage);
+  const masterPreview = master || concepts.find((file) => file.id === selectedConcept);
+  const activeStep = ["reference", "direction", "master", "traits", "assets", "collection"].findIndex((key) => stage === key);
+  const values = plan.categories.flatMap((item) => item.values);
+  const completed = [!!reference && !!project.analysis, concepts.length > 0 || !!master, !!master && !!contract, !!project.plan?.categories?.length, values.length > 0 && values.every((value) => value.approved), project.nft_count >= project.target_count];
 
   return (
     <main className="studio">
       <header className="topbar">
-        <a href="#/"><Mark /></a>
-        <div>
+        <a className="btn-ghost studio-back" href="#/" aria-label="返回项目列表"><span aria-hidden="true">←</span> <span>项目列表</span></a>
+        <a className="brand-lockup studio-mobile-brand" href="#/"><Mark /> Oriel NFT</a>
+        <div className="studio-project-title">
           <h1>{project.name}</h1>
           <div className="muted">{provider ? provider.name : "未配置接口"} · 目标 {project.target_count} 张</div>
+        </div>
+        <div
+          className="workflow-progress"
+          role="progressbar"
+          aria-label="创作进度"
+          aria-valuemin={1}
+          aria-valuemax={STAGES.length}
+          aria-valuenow={stageIndex + 1}
+        >
+          <span><i style={{ width: `${((activeStep + 1) / STAGES.length) * 100}%` }} /></span>
+          <small>{activeStep + 1} / {STAGES.length}</small>
         </div>
         <div className="spacer" />
         <a className="btn-ghost" href="#/settings">接口</a>
         <button className="btn" onClick={() => exportZip().catch((err) => setError(err.message))} disabled={!project.nft_count}>导出</button>
       </header>
-      <div className="studio-body">
-        <nav className="rail">
+      <div className={`studio-body${stage === "master" ? " master-workspace" : ""}`}>
+        <nav className="rail" aria-label="创作阶段">
           {STAGES.map(([key, label], index) => (
-            <button key={key} className={stage === key ? "on" : ""} onClick={() => setStage(key)}>
-              <em>0{index + 1}</em>{label}
+            <button key={key} className={stage === key ? "on" : completed[index] ? "complete" : ""} aria-current={stage === key ? "step" : undefined} onClick={() => setStage(key)}>
+              <em>{completed[index] && stage !== key ? "✓" : index + 1}</em><span>{label}</span><small>{stage === key ? "当前阶段" : completed[index] ? "已完成" : "待完成"}</small>
             </button>
           ))}
         </nav>
-        <section className="stage">
-          <h2>{STAGES.find((item) => item[0] === stage)?.[1]}</h2>
+        <section className={`stage-panel${stage === "master" ? " master-stage" : ""}`}>
+          <div className="stage-panel-head">
+            <h2>{STAGES[stageIndex][1]}</h2>
+            {stage === "collection" && <span className="muted">{project.nft_count} / {project.target_count}</span>}
+          </div>
           {error && <p className="error">{error}</p>}
           {job && job.status !== "done" && (
             <div className="job">
@@ -258,13 +279,16 @@ export default function Studio({ id }) {
           {stage === "master" && (
             <>
               <p className="muted">锁定之后，整套 NFT 只对齐这张主图。仅取灵感档位不再回头对齐原图。</p>
-              <div className="hero checker">{(master || concepts.find((file) => file.id === selectedConcept)) && <img src={(master || concepts.find((file) => file.id === selectedConcept)).url} alt="主图" />}</div>
-              <div className="row" style={{ marginTop: 12 }}>
-                <button className="btn" disabled={!!master || !selectedConcept || job?.status === "running"} onClick={() => runJob(`/api/projects/${id}/lock`, { method: "POST", body: JSON.stringify({ file_id: selectedConcept }) }).catch((err) => setError(err.message))}>锁定这张候选</button>
-                <button className="btn-ghost" disabled={!master || job?.status === "running"} onClick={() => runJob(`/api/projects/${id}/cutout`, { method: "POST" }, false).catch((err) => setError(err.message))}>本地分离主体</button>
-                <button className="btn-ghost" disabled={!master || !provider || job?.status === "running"} onClick={() => runJob(`/api/projects/${id}/cutout?use_model=true`, { method: "POST" }).catch((err) => setError(err.message))}>模型分离</button>
-              </div>
-              {cutout && <div className="hero checker" style={{ marginTop: 12 }}><img src={cutout.url} alt="主体分离" /></div>}
+              <div className="trait-image-preview">{masterPreview && <img src={masterPreview.url} alt="主图预览" />}{cutout && <img src={cutout.url} alt="主体分离" />}</div>
+              {!master && <button className="btn" disabled={!selectedConcept || job?.status === "running"} onClick={() => {
+                if (window.confirm("锁定后整套作品将以这张图为准。继续？")) runJob(`/api/projects/${id}/lock`, { method: "POST", body: JSON.stringify({ file_id: selectedConcept }) }).catch((err) => setError(err.message));
+              }}>锁定这张候选</button>}
+              {master && <fieldset className="separation-options">
+                <legend>分离方式</legend>
+                <label><input type="radio" name="separation" checked={separation === "local"} onChange={() => setSeparation("local")} /> 本地分离（适合纯色背景）</label>
+                <label><input type="radio" name="separation" checked={separation === "model"} onChange={() => setSeparation("model")} /> 模型分离（将调用接口）</label>
+                <button className="btn-ghost" disabled={job?.status === "running" || (separation === "model" && !provider)} onClick={() => runJob(`/api/projects/${id}/cutout${separation === "model" ? "?use_model=true" : ""}`, { method: "POST" }, separation === "model").catch((err) => setError(err.message))}>{cutout ? "重新分离主体" : "分离主体"}</button>
+              </fieldset>}
             </>
           )}
 
@@ -348,8 +372,16 @@ export default function Studio({ id }) {
               </div>}
             </>
           )}
+          {stage === "collection" && (
+            <div className="collection-summary"><strong>{project.nft_count} / {project.target_count}</strong><span>系列已生成</span></div>
+          )}
         </section>
         <aside className="inspector">
+          {stage === "master" && masterPreview && <section className="master-preview">
+            <h3>主图预览</h3>
+            <a className="hero checker" href={masterPreview.url} target="_blank" rel="noreferrer" aria-label="打开主图原图"><img src={masterPreview.url} alt="主图预览" /><span>查看原图 ↗</span></a>
+            {cutout && <details><summary>查看主体分离图</summary><img className="checker" src={cutout.url} alt="主体分离" /></details>}
+          </section>}
           {stage === "reference" && (
             <div className="form-grid">
               <h3>这一步怎么处理主体</h3>
@@ -384,19 +416,24 @@ export default function Studio({ id }) {
             </div>
           )}
           {stage === "master" && contract && (
-            <div className="form-grid">
+            <div className="form-grid contract-editor">
               <h3>风格合同</h3>
+              {[
+                ["渲染语言 / 配色", [["summary", "渲染语言"], ["palette", "配色", true]]],
+                ["线条 / 光照 / 材质", [["line", "线条"], ["lighting", "光照"], ["texture", "材质"]]],
+                ["构图", [["crop", "构图"]]],
+                ["身份锚点", [["identity", "身份锚点", true]]],
+                ["排除项", [["forbid", "排除项", true]]],
+              ].map(([title, fields]) => (
+                <details key={title} className="contract-group">
+                  <summary><strong>{title}</strong><span className="muted">{fields.map(([key]) => lines(contract[key])).filter(Boolean).join("、") || "未填写"}</span></summary>
+                  <div className="contract-row">{fields.map(([key, label, list]) => (
+            <label key={key}>{label}<textarea value={lines(contract[key])} onChange={(event) => setContract({ ...contract, [key]: list ? splitLines(event.target.value) : event.target.value })} /></label>
+          ))}</div>
+                </details>
+              ))}
               <p className="muted">修改合同后，请重新审核素材并确认样张。</p>
-              <label>渲染语言<textarea value={contract.summary || ""} onChange={(event) => setContract({ ...contract, summary: event.target.value })} /></label>
-              <label>配色<textarea value={lines(contract.palette)} onChange={(event) => setContract({ ...contract, palette: splitLines(event.target.value) })} /></label>
-              <label>线条<input value={contract.line || ""} onChange={(event) => setContract({ ...contract, line: event.target.value })} /></label>
-              <label>光照<input value={contract.lighting || ""} onChange={(event) => setContract({ ...contract, lighting: event.target.value })} /></label>
-              <label>材质<input value={contract.texture || ""} onChange={(event) => setContract({ ...contract, texture: event.target.value })} /></label>
-              <label>构图<input value={contract.crop || ""} onChange={(event) => setContract({ ...contract, crop: event.target.value })} /></label>
-              <label>身份锚点<textarea value={lines(contract.identity)} onChange={(event) => setContract({ ...contract, identity: splitLines(event.target.value) })} /></label>
-              <label>排除项<textarea value={lines(contract.forbid)} onChange={(event) => setContract({ ...contract, forbid: splitLines(event.target.value) })} /></label>
-              <button className="btn" onClick={() => saveContract().catch((err) => setError(err.message))}>保存合同</button>
-              {!cutout && <div className="warn">还没有主体分离图。纯色背景可以本地分离；复杂背景再用模型。</div>}
+              <button className="btn contract-save" onClick={() => saveContract().catch((err) => setError(err.message))}>保存合同</button>
             </div>
           )}
           {stage === "traits" && category && (
@@ -461,7 +498,7 @@ export default function Studio({ id }) {
           )}
           {stage === "collection" && (
             <div>
-              <h3>{selectedNft ? `#${selectedNft.token_id}` : "分布"}</h3>
+              <h3>{selectedNft ? `#${selectedNft.token_id}` : "状态与属性分布"}</h3>
               {selectedNft && (
                 <div className="form-grid">
                   {selectedNft.attributes.map((attr) => <div key={attr.value_id}>{attr.trait_type}：{attr.value}</div>)}
